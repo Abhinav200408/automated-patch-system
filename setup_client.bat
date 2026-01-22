@@ -32,33 +32,28 @@ if %errorlevel% neq 0 (
             exit /b
         )
         
-        echo Installing Python... (This may take a few minutes)
-        :: Use start /wait to ensure installer finishes before proceeding
-        start /wait "" python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+        echo Installing Python to C:\PatchAgent\Python...
+        if not exist "C:\PatchAgent" mkdir "C:\PatchAgent"
+        
+        :: Force install to specific directory so we know where it is
+        start /wait "" python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 TargetDir=C:\PatchAgent\Python
         del python_installer.exe
         
         :: Re-check paths after install
-        if exist "C:\Program Files\Python311\python.exe" (
+        if exist "C:\PatchAgent\Python\python.exe" (
+            set "PYTHON_CMD=C:\PatchAgent\Python\python.exe"
+        ) else if exist "C:\Program Files\Python311\python.exe" (
             set "PYTHON_CMD=C:\Program Files\Python311\python.exe"
         ) else if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
             set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
-        ) else if exist "C:\Windows\py.exe" (
-            set "PYTHON_CMD=py"
         ) else (
             echo.
-            echo Python installed but not found.
-            echo Checked: C:\Program Files\Python311\python.exe
-            echo Checked: %LOCALAPPDATA%\Programs\Python\Python311\python.exe
+            echo Python installation seemed to fail.
+            echo We tried to install to: C:\PatchAgent\Python
             echo.
-            echo Trying to use global 'python' command as a last resort...
-            python --version >nul 2>&1
-            if !errorlevel! equ 0 (
-                set "PYTHON_CMD=python"
-            ) else (
-                echo Failed. Please restart this script.
-                pause
-                exit /b
-            )
+            echo Please try running the script again as Administrator.
+            pause
+            exit /b
         )
     )
 ) else (
