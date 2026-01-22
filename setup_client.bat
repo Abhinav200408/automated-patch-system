@@ -32,26 +32,34 @@ if %errorlevel% neq 0 (
             exit /b
         )
         
-        echo Installing Python to C:\PatchAgent\Python...
-        if not exist "C:\PatchAgent" mkdir "C:\PatchAgent"
+        echo Installing Python... (This may take a few minutes)
         
-        :: Force install to specific directory so we know where it is
-        start /wait "" python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 TargetDir=C:\PatchAgent\Python
+        :: Try installing to default location (Program Files) with logging
+        start /wait "" python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 /log python_install.log
         del python_installer.exe
         
         :: Re-check paths after install
-        if exist "C:\PatchAgent\Python\python.exe" (
-            set "PYTHON_CMD=C:\PatchAgent\Python\python.exe"
-        ) else if exist "C:\Program Files\Python311\python.exe" (
+        if exist "C:\Program Files\Python311\python.exe" (
             set "PYTHON_CMD=C:\Program Files\Python311\python.exe"
         ) else if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
             set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+        ) else if exist "C:\Windows\py.exe" (
+            set "PYTHON_CMD=py"
         ) else (
             echo.
             echo Python installation seemed to fail.
-            echo We tried to install to: C:\PatchAgent\Python
             echo.
-            echo Please try running the script again as Administrator.
+            echo ==========================================
+            echo INSTALLER LOG (Last 20 lines):
+            echo ==========================================
+            if exist python_install.log (
+                powershell -Command "Get-Content python_install.log -Tail 20"
+            ) else (
+                echo Log file not found.
+            )
+            echo ==========================================
+            echo.
+            echo Please share the above log with support.
             pause
             exit /b
         )
