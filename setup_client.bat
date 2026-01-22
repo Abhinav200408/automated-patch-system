@@ -6,7 +6,12 @@ echo ==========================================
 :: Check for Python
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Python is not installed! Please install Python 3.8+ and try again.
+    echo Python is not installed!
+    echo.
+    echo We have included an automatic installer.
+    echo Please run: install_python.bat
+    echo.
+    echo After installing, close this window and run setup_client.bat again.
     pause
     exit /b
 )
