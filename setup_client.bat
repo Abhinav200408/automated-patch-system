@@ -33,7 +33,8 @@ if %errorlevel% neq 0 (
         )
         
         echo Installing Python... (This may take a few minutes)
-        python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+        :: Use start /wait to ensure installer finishes before proceeding
+        start /wait "" python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
         del python_installer.exe
         
         :: Re-check paths after install
@@ -41,11 +42,23 @@ if %errorlevel% neq 0 (
             set "PYTHON_CMD=C:\Program Files\Python311\python.exe"
         ) else if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
             set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+        ) else if exist "C:\Windows\py.exe" (
+            set "PYTHON_CMD=py"
         ) else (
             echo.
-            echo Python installed but not found. Please restart this script.
-            pause
-            exit /b
+            echo Python installed but not found.
+            echo Checked: C:\Program Files\Python311\python.exe
+            echo Checked: %LOCALAPPDATA%\Programs\Python\Python311\python.exe
+            echo.
+            echo Trying to use global 'python' command as a last resort...
+            python --version >nul 2>&1
+            if !errorlevel! equ 0 (
+                set "PYTHON_CMD=python"
+            ) else (
+                echo Failed. Please restart this script.
+                pause
+                exit /b
+            )
         )
     )
 ) else (
