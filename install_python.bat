@@ -22,4 +22,4 @@ echo You may need to restart this terminal or your computer for changes to take 
 echo.
 echo Please run setup_client.bat again.
 del python_installer.exe
-pause
+:: pause removed for automation
