@@ -34,11 +34,11 @@ if %errorlevel% neq 0 (
         
         echo Installing Python... (This may take a few minutes)
         
-        :: Try installing to default location (Program Files) with logging
+        REM Try installing to default location (Program Files) with logging
         start /wait "" python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 /log python_install.log
         del python_installer.exe
         
-        :: Re-check paths after install
+        REM Re-check paths after install
         if exist "C:\Program Files\Python311\python.exe" (
             set "PYTHON_CMD=C:\Program Files\Python311\python.exe"
         ) else if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
