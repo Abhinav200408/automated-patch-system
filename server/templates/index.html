@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Patch Management - Windows</title>
+    <!-- Link to the external stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Automated Patch Management</h1>
+            <p>Important: Run this application as <strong>Administrator</strong>.</p>
+        </header>
+
+        <div class="card">
+            <h2>System Information & Status</h2>
+            <div class="button-group">
+                <button onclick="callApi('/api/check-installed', 'Check Installed Software')">Check Installed
+                    Software</button>
+                <button onclick="callApi('/api/list-hotfixes', 'List Installed Hotfixes')">List Installed
+                    Hotfixes</button>
+                <button onclick="callApi('/api/get-log', 'View Activity Log')">View Activity Log</button>
+            </div>
+            <div id="health-status">Checking health status...</div>
+        </div>
+
+        <div class="card">
+            <h2>Scheduler Settings</h2>
+            <div class="button-group" style="justify-content: flex-start; align-items: center; gap: 10px;">
+                <label for="schedule-time">Daily Update Time:</label>
+                <input type="time" id="schedule-time" name="schedule-time">
+                <button onclick="saveSchedule()">Save Schedule</button>
+            </div>
+            <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                Windows updates will run at this time. Third-party updates will run 1 hour later.
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Third-Party Software (Winget)</h2>
+            <div class="button-group">
+                <button onclick="callApi('/api/check-third-party', 'Check Third-Party Updates')">Check Third-Party
+                    Updates</button>
+                <button onclick="callApi('/api/install-third-party', 'Install Third-Party Updates')">Install Third-Party
+                    Updates</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Windows Update Actions</h2>
+            <div class="button-group">
+                <button onclick="callApi('/api/check-updates', 'Check Available Updates')">Check Available
+                    Updates</button>
+                <button onclick="callApi('/api/download-updates', 'Download Updates')">Download Updates</button>
+                <button onclick="callApi('/api/install-updates', 'Install Updates')">Install Updates</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="results-header">
+                <h2>Results</h2>
+                <button id="clear-btn" onclick="clearOutput()">Clear Output</button>
+            </div>
+            <div id="status">
+                <div class="spinner" id="loader"></div>
+                <span id="status-text">Click a button to run an action.</span>
+            </div>
+            <div id="output-container">
+                <pre id="outtext">No output yet.</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript remains here -->
+    <script>
+        const statusText = document.getElementById('status-text');
+        const loader = document.getElementById('loader');
+        const outText = document.getElementById('outtext');
+        const healthStatusDiv = document.getElementById('health-status');
+
+        async function callApi(path, actionName) {
+            statusText.className = 'status-running';
+            statusText.innerText = `Running: ${actionName}...`;
+            loader.style.display = 'block';
+            outText.innerHTML = 'Fetching data...';
+
+            try {
+                const response = await fetch(path);
+                const resultText = await response.text();
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                if (path === '/api/health') {
+                    const data = JSON.parse(resultText);
+                    outText.innerHTML = `PSWindowsUpdate Status: ${data.pswindowsupdate}\nTimestamp: ${data.timestamp}`;
+                    updateHealthStatus(data);
+                } else {
+                    outText.innerHTML = resultText;
+                }
+
+                statusText.className = 'status-success';
+                statusText.innerText = `Completed: ${actionName}`;
+
+            } catch (err) {
+                statusText.className = 'status-error';
+                statusText.innerText = `Error running ${actionName}: ${err.message}`;
+                console.error(err);
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function clearOutput() {
+            outText.innerText = 'No output yet.';
+            statusText.className = '';
+            statusText.innerText = 'Click a button to run an action.';
+        }
+
+        function updateHealthStatus(data) {
+            if (data.error) {
+                healthStatusDiv.innerText = `Health Status: Error - ${data.error}`;
+                healthStatusDiv.style.color = 'var(--error-color)';
+            } else {
+                healthStatusDiv.innerHTML = `<strong>PSWindowsUpdate:</strong> ${data.pswindowsupdate}<br><strong>Timestamp:</strong> ${data.timestamp}`;
+                healthStatusDiv.style.color = 'var(--text-primary)';
+            }
+        }
+
+        async function saveSchedule() {
+            const timeInput = document.getElementById('schedule-time');
+            const newTime = timeInput.value;
+
+            if (!newTime) {
+                alert("Please select a time.");
+                return;
+            }
+
+            statusText.className = 'status-running';
+            statusText.innerText = 'Saving schedule...';
+
+            try {
+                const response = await fetch('/api/set-schedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ schedule_time: newTime })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusText.className = 'status-success';
+                    statusText.innerText = data.message;
+                    outText.innerText = data.message;
+                } else {
+                    throw new Error(data.error || "Unknown error");
+                }
+            } catch (err) {
+                statusText.className = 'status-error';
+                statusText.innerText = `Error saving schedule: ${err.message}`;
+            }
+        }
+
+        window.onload = async () => {
+            try {
+                // Load health status
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                updateHealthStatus(data);
+
+                // Load current schedule
+                const schedResponse = await fetch('/api/get-schedule');
+                const schedData = await schedResponse.json();
+                if (schedData.schedule_time) {
+                    document.getElementById('schedule-time').value = schedData.schedule_time;
+                }
+            } catch (err) {
+                healthStatusDiv.innerText = 'Could not fetch status.';
+                healthStatusDiv.style.color = 'var(--error-color)';
+                console.error(err);
+            }
+        };
+    </script>
+</body>
+
+</html>

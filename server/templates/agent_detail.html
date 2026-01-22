@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Control - Automated Patch Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <style>
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .actions-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .terminal-card {
+            background: #1e1e1e;
+            /* Darker terminal bg */
+            border: 1px solid #333;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .red {
+            background: #ff5f56;
+        }
+
+        .yellow {
+            background: #ffbd2e;
+        }
+
+        .green {
+            background: #27c93f;
+        }
+
+        .terminal-title {
+            margin-left: 1rem;
+            font-family: monospace;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .output-container {
+            background: transparent;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            color: #4af626;
+            /* Hacker green text */
+            border: none;
+            min-height: 200px;
+        }
+
+        /* Glow effect for primary button */
+        .primary-glow {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .primary-glow:hover {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.7);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="back-link">← Back to Dashboard</a>
+            <h1>Agent Control Center</h1>
+            <p style="color: var(--text-secondary);">ID: {{ agent_id }}</p>
+        </header>
+
+        <!-- Control Grid -->
+        <div class="control-grid">
+            <div class="card">
+                <h2>System Info</h2>
+                <div class="actions-vertical">
+                    <button onclick="runAction('check_installed')">Check Installed Software</button>
+                    <button onclick="runAction('list_hotfixes')">List Installed Hotfixes</button>
+                    <button onclick="runAction('get_log')" class="secondary">View Activity Log</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Windows Updates</h2>
+                <div class="actions-vertical">
+                    <button onclick="runAction('check_updates')">Check Available Updates</button>
+                    <button onclick="runAction('download_updates')">Download Updates</button>
+                    <button onclick="runAction('install_updates')" class="primary-glow">Install Updates</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Third-Party</h2>
+                <div class="actions-vertical">
+                    <button onclick="runAction('check_third_party')">Check Updates (Winget)</button>
+                    <button onclick="runAction('install_third_party')">Install Updates (Winget)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Output -->
+        <div class="card terminal-card" style="margin-top: 2rem;">
+            <div class="terminal-header">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+                <span class="terminal-title">Command Output</span>
+            </div>
+            <div id="status-text" style="margin: 0.5rem 1rem; color: var(--accent-color); font-family: monospace;">>
+                Ready</div>
+            <div id="output" class="output-container">_</div>
+        </div>
+    </div>
+
+    <script>
+        const AGENT_ID = "{{ agent_id }}";
+        const outputDiv = document.getElementById('output');
+        const statusDiv = document.getElementById('status-text');
+        let pollInterval;
+
+        async function runAction(command) {
+            statusDiv.innerText = `> Sending command: ${command}...`;
+            outputDiv.innerText = 'Waiting for agent...';
+
+            try {
+                const response = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_id: AGENT_ID, command: command })
+                });
+                const data = await response.json();
+
+                if (data.status === 'queued' && data.command_id) {
+                    statusDiv.innerText = `> Command queued (ID: ${data.command_id}). Waiting for execution...`;
+                    pollCommand(data.command_id);
+                } else {
+                    statusDiv.innerText = '> Command failed to queue.';
+                    outputDiv.innerText = JSON.stringify(data);
+                }
+            } catch (err) {
+                statusDiv.innerText = '> Error sending command.';
+                outputDiv.innerText = err.message;
+            }
+        }
+
+        async function pollCommand(commandId) {
+            if (pollInterval) clearInterval(pollInterval);
+            let attempts = 0;
+            pollInterval = setInterval(async () => {
+                attempts++;
+                if (attempts > 30) {
+                    clearInterval(pollInterval);
+                    statusDiv.innerText = '> Timeout waiting for result.';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/command/${commandId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.status === 'completed') {
+                            clearInterval(pollInterval);
+                            statusDiv.innerText = '> Command completed successfully.';
+                            outputDiv.innerText = data.result || 'No output.';
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>

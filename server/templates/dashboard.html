@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Patch Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .server-info {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.05);
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Local Control Styles */
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .actions-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .terminal-card {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            padding: 0;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .red {
+            background: #ff5f56;
+        }
+
+        .yellow {
+            background: #ffbd2e;
+        }
+
+        .green {
+            background: #27c93f;
+        }
+
+        .terminal-title {
+            margin-left: 1rem;
+            font-family: monospace;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .output-container {
+            background: transparent;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #4af626;
+            border: none;
+            min-height: 150px;
+        }
+
+        .primary-glow {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .primary-glow:hover {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.7);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Automated Patch Management System</h1>
+            <div class="server-info">Server: {{ server_hostname }} (v1.1)</div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ total }}</div>
+                <div class="stat-label">Total Agents</div>
+            </div>
+            <div class="stat-card" style="border-bottom: 2px solid var(--success-color);">
+                <div class="stat-value" style="-webkit-text-fill-color: var(--success-color);">{{ online }}</div>
+                <div class="stat-label">Online</div>
+            </div>
+            <div class="stat-card" style="border-bottom: 2px solid var(--error-color);">
+                <div class="stat-value" style="-webkit-text-fill-color: var(--error-color);">{{ offline }}</div>
+                <div class="stat-label">Offline</div>
+            </div>
+        </div>
+
+        <!-- Local Server Control Section -->
+        {% set local_agent = namespace(value=None) %}
+        {% for agent in agents %}
+        {% if agent['hostname'] == server_hostname %}
+        {% set local_agent.value = agent %}
+        {% endif %}
+        {% endfor %}
+
+        {% if local_agent.value %}
+        <div class="card" style="margin-bottom: 2rem; border-color: var(--accent-color);">
+            <h2 style="color: var(--accent-color);">Local Server Control ({{ local_agent.value['hostname'] }})</h2>
+            <div class="control-grid">
+                <!-- System Info -->
+                <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 0.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-secondary);">System</h3>
+                    <div class="actions-vertical">
+                        <button onclick="runLocalAction('{{ local_agent.value['id'] }}', 'check_installed')">Check
+                            Installed</button>
+                        <button onclick="runLocalAction('{{ local_agent.value['id'] }}', 'list_hotfixes')">List
+                            Hotfixes</button>
+                        <button onclick="runLocalAction('{{ local_agent.value['id'] }}', 'get_log')"
+                            class="secondary">View Log</button>
+                    </div>
+                </div>
+
+                <!-- Windows Updates -->
+                <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 0.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-secondary);">Windows Updates
+                    </h3>
+                    <div class="actions-vertical">
+                        <button onclick="runLocalAction('{{ local_agent.value['id'] }}', 'check_updates')">Check
+                            Updates</button>
+                        <button
+                            onclick="runLocalAction('{{ local_agent.value['id'] }}', 'download_updates')">Download</button>
+                        <button onclick="runLocalAction('{{ local_agent.value['id'] }}', 'install_updates')"
+                            class="primary-glow">Install Updates</button>
+                    </div>
+                </div>
+
+                <!-- Third Party -->
+                <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 0.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-secondary);">Third-Party</h3>
+                    <div class="actions-vertical">
+                        <button onclick="runLocalAction('{{ local_agent.value['id'] }}', 'check_third_party')">Check
+                            Winget</button>
+                        <button onclick="runLocalAction('{{ local_agent.value['id'] }}', 'install_third_party')">Install
+                            Winget</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Terminal -->
+            <div class="terminal-card">
+                <div class="terminal-header">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                    <span class="terminal-title">Local Output</span>
+                </div>
+                <div id="local-status" style="margin: 0.5rem 1rem; color: var(--accent-color); font-family: monospace;">
+                    > Ready</div>
+                <div id="local-output" class="output-container">_</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Remote Fleet Section -->
+        <div class="card">
+            <h2>Remote Fleet</h2>
+            <div id="agent-list" class="agent-grid">
+                {% for agent in agents %}
+                {% if agent['hostname'] != server_hostname %}
+                <div class="agent-card">
+                    <div class="agent-header">
+                        <div>
+                            <div class="agent-name">
+                                <a href="/agent/{{ agent['id'] }}" style="color: inherit; text-decoration: none;">{{
+                                    agent['hostname'] }}</a>
+                            </div>
+                            <div class="agent-ip">{{ agent['ip_address'] }}</div>
+                        </div>
+                        <span class="status-badge status-{{ agent['status'] }}">{{ agent['status'] }}</span>
+                    </div>
+                    <small class="last-seen">Last Seen: {{ agent['last_seen'] }}</small>
+                    <div class="actions">
+                        <a href="/agent/{{ agent['id'] }}" style="text-decoration: none; flex: 1;">
+                            <button class="secondary" style="width: 100%;">Manage</button>
+                        </a>
+                        <button onclick="sendCommand('{{ agent['id'] }}', 'install_updates')">Quick Update</button>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {% if not agents %}
+                <div class="empty-state">
+                    <p>No agents connected.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Action queued successfully</div>
+
+    <script>
+        // Toast Logic
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Remote Agent Quick Command (Fire and Forget)
+        async function sendCommand(agentId, command) {
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = '...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_id: agentId, command: command })
+                });
+                const data = await response.json();
+                showToast(`Command '${command}' queued`);
+            } catch (err) {
+                showToast('Error sending command');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Local Agent Detailed Action (Poll for Result)
+        const localOutputDiv = document.getElementById('local-output');
+        const localStatusDiv = document.getElementById('local-status');
+        let localPollInterval;
+
+        async function runLocalAction(agentId, command) {
+            if (!localOutputDiv) return; // Guard if local agent not present
+
+            localStatusDiv.innerText = `> Sending command: ${command}...`;
+            localOutputDiv.innerText = 'Waiting for agent...';
+
+            try {
+                const response = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_id: agentId, command: command })
+                });
+                const data = await response.json();
+
+                if (data.status === 'queued' && data.command_id) {
+                    localStatusDiv.innerText = `> Command queued (ID: ${data.command_id}). Waiting for execution...`;
+                    pollLocalCommand(data.command_id);
+                } else {
+                    localStatusDiv.innerText = '> Command failed to queue.';
+                    localOutputDiv.innerText = JSON.stringify(data);
+                }
+            } catch (err) {
+                localStatusDiv.innerText = '> Error sending command.';
+                localOutputDiv.innerText = err.message;
+            }
+        }
+
+        async function pollLocalCommand(commandId) {
+            if (localPollInterval) clearInterval(localPollInterval);
+            let attempts = 0;
+            // Poll every 2 seconds for up to 2 minutes (60 attempts)
+            localPollInterval = setInterval(async () => {
+                attempts++;
+                if (attempts > 60) {
+                    clearInterval(localPollInterval);
+                    localStatusDiv.innerText = '> Timeout waiting for result. Please refresh the page or check logs.';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/command/${commandId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.status === 'completed') {
+                            clearInterval(localPollInterval);
+                            localStatusDiv.innerText = '> Command completed successfully.';
+                            localOutputDiv.innerText = data.result || 'No output.';
+                        } else if (data.status === 'failed') {
+                            clearInterval(localPollInterval);
+                            localStatusDiv.innerText = '> Command failed.';
+                            localOutputDiv.innerText = data.result || 'Unknown error.';
+                        } else {
+                            // Still pending, update status occasionally
+                            if (attempts % 5 === 0) {
+                                localStatusDiv.innerText = `> Command queued (ID: ${commandId}). Waiting for execution... (${attempts * 2}s)`;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                    localStatusDiv.innerText = '> Error polling status.';
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>
