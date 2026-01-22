@@ -28,8 +28,8 @@ On the **Client** computer (the one you want to control):
 
 2.  **Run the Setup Script**:
     *   Open the folder on the client machine.
-    *   Double-click **`setup_client.bat`**.
-    *   **Note:** If Python is not installed, the script will ask you to run `install_python.bat`. Run it, then try `setup_client.bat` again.
+    *   Right-click **`setup_client.bat`** and select **Run as Administrator** (or just double-click, it will ask for permission).
+    *   **Automation**: The script will automatically install Python and necessary libraries if they are missing.
 
 3.  **Enter Server IP**:
     *   The script will ask for the **Server IP**.
