@@ -3,11 +3,14 @@ setlocal EnableDelayedExpansion
 echo ==========================================
 echo Automated Patch Management Agent Setup
 echo ==========================================
+echo Debug Mode: Checking if script starts...
+pause
 
 :: 1. Check for Admin Rights
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo Requesting Administrator privileges...
+    pause
     powershell -Command "Start-Process '%~f0' -Verb RunAs"
     exit /b
 )
