@@ -11,17 +11,16 @@ pause
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo Requesting Administrator privileges...
-    echo Please click YES on the UAC prompt that appears.
+    echo.
+    echo A NEW WINDOW will open asking for permission.
+    echo Please click YES.
+    echo.
     pause
-    powershell -Command "Start-Process '%~f0' -Verb RunAs"
-    if %errorlevel% neq 0 (
-        echo.
-        echo Failed to launch as Administrator.
-        echo Error Code: %errorlevel%
-        echo.
-        echo Please try right-clicking the file and selecting "Run as Administrator".
-        pause
-    )
+    
+    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
+    echo UAC.ShellExecute "%~s0", "", "", "runas", 1 >> "%temp%\getadmin.vbs"
+    "%temp%\getadmin.vbs"
+    del "%temp%\getadmin.vbs"
     exit /b
 )
 
