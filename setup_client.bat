@@ -4,14 +4,24 @@ echo ==========================================
 echo Automated Patch Management Agent Setup
 echo ==========================================
 echo Debug Mode: Checking if script starts...
+net session >nul 2>&1 && echo Status: ADMIN || echo Status: NOT ADMIN
 pause
 
 :: 1. Check for Admin Rights
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo Requesting Administrator privileges...
+    echo Please click YES on the UAC prompt that appears.
     pause
     powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    if %errorlevel% neq 0 (
+        echo.
+        echo Failed to launch as Administrator.
+        echo Error Code: %errorlevel%
+        echo.
+        echo Please try right-clicking the file and selecting "Run as Administrator".
+        pause
+    )
     exit /b
 )
 
