@@ -23,9 +23,13 @@ if %errorLevel% neq 0 (
     del "%temp%\getadmin.vbs"
     exit /b
 )
+echo Debug: Admin check passed.
+pause
 
 :: 2. Check for Python
 python --version >nul 2>&1
+echo Debug: Python check done. ErrorLevel: %errorlevel%
+pause
 if %errorlevel% neq 0 (
     echo Python not found. Checking standard install paths...
     
