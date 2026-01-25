@@ -28,7 +28,8 @@ On the **Client** computer (the one you want to control):
 
 2.  **Run Setup**:
     *   Double-click `setup_client.bat` on the Client.
-    *   **Python**: It will automatically launch `install_python.bat` if Python is missing.
+    *   **Python**: It will automatically launch `install_python.bat` if Python is missing (installs to local folder).
+    *   **Dependencies**: Pre-bundled (no internet needed for libraries).
     *   **Configuration**:
         *   It will ask for the **Server IP Address** (e.g., `172.22.205.250`).
         *   Enter the IP and press Enter.
