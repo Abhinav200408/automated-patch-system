@@ -20,7 +20,8 @@ def load_config():
         try:
             with open(CONFIG_FILE, 'r') as f:
                 return json.load(f)
-        except:
+        except Exception as e:
+            print(f"Error loading config: {e}")
             pass
     return {}
 
@@ -114,4 +115,4 @@ if __name__ == "__main__":
     register()
     while True:
         heartbeat()
-        time.sleep(30)
+        time.sleep(5)

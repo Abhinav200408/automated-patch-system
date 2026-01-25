@@ -25,8 +25,10 @@ def index():
 
 @app.route('/agent/<agent_id>')
 def agent_detail(agent_id):
-    # In a real app, fetch agent details. For now, pass ID.
-    return render_template('agent_detail.html', agent_id=agent_id)
+    agent = database.get_agent_details(agent_id)
+    if not agent:
+        return "Agent not found", 404
+    return render_template('agent_detail.html', agent=agent)
 
 @app.route('/api/register', methods=['POST'])
 def register():

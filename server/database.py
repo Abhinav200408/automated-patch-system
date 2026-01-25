@@ -2,10 +2,13 @@ import sqlite3
 import os
 from datetime import datetime
 
-DB_FILE = 'server/agents.db'
+DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'agents.db')
 
 def init_db():
-    os.makedirs('server', exist_ok=True)
+    # Ensure the directory exists (it should, since this file is in it)
+    db_dir = os.path.dirname(DB_FILE)
+    os.makedirs(db_dir, exist_ok=True)
+    
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute('''
@@ -83,6 +86,17 @@ def get_all_agents():
     agents = [dict(row) for row in c.fetchall()]
     conn.close()
     return agents
+
+def get_agent_details(agent_id):
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('SELECT * FROM agents WHERE id = ?', (agent_id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return dict(row)
+    return None
 
 def get_command_result(command_id):
     conn = sqlite3.connect(DB_FILE)
