@@ -75,11 +75,30 @@ if not exist "agent\config.json" (
     ) > agent\config.json
 )
 
-:: 3. Install Dependencies
+:: 4. Install Dependencies
 echo Installing dependencies (requests)...
 !PYTHON_CMD! -m pip install requests
 
-:: 4. Start Agent
+:: 5. Configure Auto-Start (Persistence)
+echo.
+echo Configuring Auto-Start...
+set "STARTUP_FOLDER=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
+set "SHORTCUT_PATH=%STARTUP_FOLDER%\PatchAgent.lnk"
+set "TARGET_PATH=%~dp0client_startup.bat"
+
+:: Create Shortcut using VBScript
+echo Set oWS = WScript.CreateObject("WScript.Shell") > "%temp%\makeshortcut.vbs"
+echo sLinkFile = "%SHORTCUT_PATH%" >> "%temp%\makeshortcut.vbs"
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%temp%\makeshortcut.vbs"
+echo oLink.TargetPath = "%TARGET_PATH%" >> "%temp%\makeshortcut.vbs"
+echo oLink.WorkingDirectory = "%~dp0" >> "%temp%\makeshortcut.vbs"
+echo oLink.Save >> "%temp%\makeshortcut.vbs"
+cscript /nologo "%temp%\makeshortcut.vbs"
+del "%temp%\makeshortcut.vbs"
+
+echo Auto-start configured! (Agent will start when you login)
+
+:: 6. Start Agent Now
 echo Starting Agent...
 cd agent
 !PYTHON_CMD! agent.py
