@@ -32,8 +32,10 @@ echo Checking for Python...
 
 set "PYTHON_CMD="
 
-:: Check our custom path first
-if exist "C:\PatchAgent\Python\python.exe" (
+:: Check our local portable path first
+if exist "%~dp0python\python.exe" (
+    set "PYTHON_CMD=%~dp0python\python.exe"
+) else if exist "C:\PatchAgent\Python\python.exe" (
     set "PYTHON_CMD=C:\PatchAgent\Python\python.exe"
 ) else if exist "C:\Program Files\Python311\python.exe" (
     set "PYTHON_CMD=C:\Program Files\Python311\python.exe"
@@ -52,7 +54,9 @@ if "!PYTHON_CMD!"=="" (
     call install_python.bat
     
     :: Re-check after installer returns
-    if exist "C:\PatchAgent\Python\python.exe" (
+    if exist "%~dp0python\python.exe" (
+        set "PYTHON_CMD=%~dp0python\python.exe"
+    ) else if exist "C:\PatchAgent\Python\python.exe" (
         set "PYTHON_CMD=C:\PatchAgent\Python\python.exe"
     ) else (
         echo.

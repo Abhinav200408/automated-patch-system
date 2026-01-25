@@ -4,7 +4,9 @@ cd /d "%~dp0"
 
 :: Simple Python Detection (Same as setup script)
 set "PYTHON_CMD="
-if exist "C:\PatchAgent\Python\python.exe" (
+if exist "%~dp0python\python.exe" (
+    set "PYTHON_CMD=%~dp0python\python.exe"
+) else if exist "C:\PatchAgent\Python\python.exe" (
     set "PYTHON_CMD=C:\PatchAgent\Python\python.exe"
 ) else if exist "C:\Program Files\Python311\python.exe" (
     set "PYTHON_CMD=C:\Program Files\Python311\python.exe"

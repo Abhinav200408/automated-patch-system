@@ -34,18 +34,18 @@ if not exist python_installer.exe (
 )
 
 :: 3. Install Python
-echo Installing Python to C:\PatchAgent\Python...
-if not exist "C:\PatchAgent" mkdir "C:\PatchAgent"
+echo Installing Python to "%~dp0python"...
+if not exist "%~dp0python" mkdir "%~dp0python"
 
 echo This may take a few minutes...
-start /wait "" python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 TargetDir=C:\PatchAgent\Python /log python_install.log
+start /wait "" python_installer.exe /quiet InstallAllUsers=0 PrependPath=0 Include_test=0 TargetDir="%~dp0python" /log python_install.log
 del python_installer.exe
 
 :: 4. Verify Install
-if exist "C:\PatchAgent\Python\python.exe" (
+if exist "%~dp0python\python.exe" (
     echo.
     echo Python installed successfully!
-    echo Location: C:\PatchAgent\Python\python.exe
+    echo Location: "%~dp0python\python.exe"
     echo.
     echo You can now close this window and run setup_client.bat again.
 ) else (
