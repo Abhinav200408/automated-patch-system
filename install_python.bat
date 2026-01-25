@@ -23,14 +23,19 @@ if %errorLevel% neq 0 (
 
 echo Status: ADMIN
 
-:: 2. Download Python
-echo Downloading Python 3.11...
-powershell -Command "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.5/python-3.11.5-amd64.exe' -OutFile 'python_installer.exe'"
-
-if not exist python_installer.exe (
-    echo Failed to download Python installer. Please check your internet connection.
-    pause
-    exit /b
+:: 2. Download Python (if not present)
+if exist "python_installer.exe" (
+    echo Found local installer: python_installer.exe
+    echo Skipping download...
+) else (
+    echo Local installer not found. Downloading Python 3.11...
+    powershell -Command "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.5/python-3.11.5-amd64.exe' -OutFile 'python_installer.exe'"
+    
+    if not exist python_installer.exe (
+        echo Failed to download Python installer. Please check your internet connection.
+        pause
+        exit /b
+    )
 )
 
 :: 3. Install Python

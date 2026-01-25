@@ -19,12 +19,15 @@ You are currently on the **Server**.
 
 On the **Client** computer (the one you want to control):
 
-1.  **Copy Files**: Copy the following files from the Server (`d:\automated_patch_system`) to the Client computer (e.g., using a USB drive or network share):
-    *   `setup_client.bat`
-    *   `install_python.bat`
-    *   `client_startup.bat`
-    *   The `agent` folder (and all its contents)
-    *   **IMPORTANT**: Do **NOT** copy the `venv` folder. It will break on the client.
+1.  **Prepare Files (Offline Mode)**:
+    *   Run `download_installer.bat` on the Server. This will download `python_installer.exe`.
+    *   **Copy Files**: Copy the following files from the Server (`d:\automated_patch_system`) to the Client computer:
+        *   `setup_client.bat`
+        *   `install_python.bat`
+        *   `client_startup.bat`
+        *   `python_installer.exe` (The file you just downloaded)
+        *   The `agent` folder (and all its contents)
+        *   **IMPORTANT**: Do **NOT** copy the `venv` folder. It will break on the client.
 
 2.  **Run Setup**:
     *   Double-click `setup_client.bat` on the Client.
