@@ -4,6 +4,29 @@ echo ==========================================
 echo Automated Patch Management Agent Setup
 echo ==========================================
 
+:: 0. Check for broken venv (Common mistake: copying venv from server)
+if exist "venv" (
+    echo.
+    echo [WARNING] 'venv' folder detected!
+    echo.
+    echo If you copied this folder from the Server, the 'venv' folder
+    echo will NOT work on this machine and will cause errors.
+    echo.
+    echo Please DELETE the 'venv' folder and run this script again.
+    echo.
+    echo (You can delete it manually, or I can try to delete it for you)
+    set /p DEL_VENV="Delete 'venv' folder now? (y/n): "
+    if /i "!DEL_VENV!"=="y" (
+        rmdir /s /q venv
+        echo 'venv' deleted. Please restart this script to be safe.
+        pause
+        exit /b
+    ) else (
+        echo Okay, proceeding... (But expect errors if you use that venv)
+        echo.
+    )
+)
+
 :: 1. Check for Python
 echo Checking for Python...
 
