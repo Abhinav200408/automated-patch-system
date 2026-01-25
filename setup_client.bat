@@ -79,9 +79,8 @@ if not exist "agent\config.json" (
     ) > agent\config.json
 )
 
-:: 4. Install Dependencies
-echo Installing dependencies (requests)...
-!PYTHON_CMD! -m pip install requests
+:: 4. Install Dependencies (Bundled)
+echo Dependencies are bundled. Skipping install...
 
 :: 5. Configure Auto-Start (Persistence)
 echo.
